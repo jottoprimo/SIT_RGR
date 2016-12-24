@@ -43,6 +43,11 @@ public class ClientThread extends Thread{
                             model.authError("Неизвестная ошибка");
                             break;
                     }
+                    continue;
+                }
+                if (message instanceof AddNewsMessage){
+                    AddNewsMessage news = (AddNewsMessage) message;
+                    //TODO: Возможно уведомлялка о улачной загрузке
                 }
             }
         } catch (IOException e) {

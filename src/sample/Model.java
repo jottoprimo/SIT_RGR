@@ -1,9 +1,7 @@
 package sample;
 
-import sample.client.AuthMessage;
-import sample.client.ClientThread;
-import sample.client.Message;
-import sample.client.NewsMessage;
+import javafx.util.Pair;
+import sample.client.*;
 
 import java.io.IOException;
 
@@ -55,5 +53,14 @@ public class Model {
 
     public void authError(String message) {
         manager.authError(message);
+    }
+
+    public void addNews(Pair<String, String> news) {
+        AddNewsMessage message = new AddNewsMessage(news.getKey(), news.getValue());
+        try {
+            client.sendMessage(message);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }

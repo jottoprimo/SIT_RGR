@@ -4,6 +4,7 @@ import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.util.Pair;
 import sun.rmi.runtime.Log;
 
 import java.io.IOException;
@@ -16,6 +17,7 @@ public class SceneManager {
     private Model model;
     private LoginController loginController;
     private MainSceneController mainController;
+    private Object stage;
 
     public SceneManager (Scene scene, Model model) {
         this.model = model;
@@ -39,18 +41,20 @@ public class SceneManager {
     }
 
     public void showLoginScreen() {
-        try {
-            FXMLLoader loader = new FXMLLoader(
-                    getClass().getResource("authScene.fxml")
-            );
-            scene.setRoot((Parent) loader.load());
-            loginController =
-                    loader.<LoginController>getController();
-            loginController.initManager(this);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        mainController = null;
+        Platform.runLater(() -> {
+            try {
+                FXMLLoader loader = new FXMLLoader(
+                        getClass().getResource("authScene.fxml")
+                );
+                scene.setRoot((Parent) loader.load());
+                loginController =
+                        loader.<LoginController>getController();
+                loginController.initManager(this);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            mainController = null;
+        });
     }
 
     public void showMainView() {
@@ -63,6 +67,8 @@ public class SceneManager {
                 mainController =
                         loader.<MainSceneController>getController();
 
+                mainController.initManager(this);
+                test();
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -81,5 +87,13 @@ public class SceneManager {
     public void authError(String message) {
         //TODO: Вывопдить ошибку
         Platform.runLater(() -> loginController.authError(message));
+    }
+
+    public void test() {
+        mainController.test();
+    }
+
+    public void addNews(Pair<String, String> news) {
+        model.addNews(news);
     }
 }

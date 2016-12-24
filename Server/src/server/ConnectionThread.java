@@ -1,13 +1,17 @@
 package server;
 
+import sample.client.AddNewsMessage;
 import sample.client.AuthMessage;
 import sample.client.Message;
+import sample.client.TitlesMessage;
 
 import java.io.*;
 import java.net.Socket;
 import java.net.SocketException;
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.Dictionary;
+import java.util.HashMap;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -79,6 +83,53 @@ public class ConnectionThread extends Thread {
                     con.close();
                     outStream.writeObject(auth);
                     outStream.flush();
+                    continue;
+                }
+                if (message instanceof AddNewsMessage){
+                    AddNewsMessage news = (AddNewsMessage) message;
+                    if (news.getId()==null){
+                        Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
+                        String connectionUrl = "jdbc:sqlserver://localhost;database=News_Service;integratedSecurity=true;";
+                        Connection con = DriverManager.getConnection(connectionUrl);
+                        Statement stmt = con.createStatement();
+                        int rs = stmt.executeUpdate(
+                                "INSERT INTO [dbo].[News]\n" +
+                                    "([Title]\n" +
+                                    ",[Text]\n" +
+                                    ",[Date]\n" +
+                                    ",[IsDeleted])\n" +
+                                "VALUES\n" +
+                                    "('"+news.getTitle()+"'\n" +
+                                    ",'"+news.getNews()+"'\n" +
+                                    ",GETDATE()\n" +
+                                    ",0)"
+                        );
+                        if (rs==0) news.setSuccess(false);
+                        else news.setSuccess(true);
+                        con.close();
+                        outStream.writeObject(news);
+                        outStream.flush();
+                    }
+                    continue;
+                }
+                if (message instanceof TitlesMessage){
+                    Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
+                    String connectionUrl = "jdbc:sqlserver://localhost;database=News_Service;integratedSecurity=true;";
+                    Connection con = DriverManager.getConnection(connectionUrl);
+                    Statement stmt = con.createStatement();
+                    ResultSet rs = stmt.executeQuery(
+                            "SELECT TOP(10) Id, Title FROM dbo.News"
+                    );
+                    HashMap<Integer, String> result = new HashMap<>();
+                    while (rs.next()){
+                        int id = rs.getInt("Id");
+                        String title = rs.getString("Title");
+                        result.put(id, title);
+                    }
+                    con.close();
+                    TitlesMessage titles = new TitlesMessage(result);
+                    sendMessage(titles);
+                    continue;
                 }
             }
         } catch (IOException e) {
@@ -121,4 +172,8 @@ public class ConnectionThread extends Thread {
         }*/
     }
 
+    public void sendMessage(Message message) throws IOException {
+        outStream.writeObject(message);
+        outStream.flush();
+    }
 }
