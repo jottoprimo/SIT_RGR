@@ -30,7 +30,7 @@ public class AddNewsDialogController {
     }
 
     public String getNews(){
-        return newsText.getHtmlText();
+        return newsText.getHtmlText().replaceAll("contenteditable=\"true\"", "");
     }
 
 }

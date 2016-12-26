@@ -1,6 +1,7 @@
 package server;
 
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.UUID;
 
 /**
@@ -9,7 +10,7 @@ import java.util.UUID;
 public class Connections {
 
 
-    private HashMap<UUID, ConnectionThread> connections = new HashMap<>();
+    private LinkedList<ConnectionThread> connections = new LinkedList<>();
     private static Connections singleton;
 
     private Connections() {
@@ -22,20 +23,15 @@ public class Connections {
         return singleton;
     }
 
-    public HashMap<UUID, ConnectionThread> getConnections(){
+    public LinkedList<ConnectionThread> getConnections(){
         return connections;
     }
 
-    public void remove(int id) {
-        connections.remove(id);
+    public void remove(ConnectionThread connectionThread) {
+        connections.remove(connectionThread);
     }
 
-    public ConnectionThread getConnection(int id){
-        connections.get(id);
-        return null;
-    }
-
-    public void add(UUID id, ConnectionThread connection){
-        connections.put(id, connection);
+    public void add(ConnectionThread connection){
+        connections.add(connection);
     }
 }

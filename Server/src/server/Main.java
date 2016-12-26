@@ -14,9 +14,8 @@ public class Main {
             ServerSocket serverSocket = new ServerSocket(8888);
             while (true){
                 Socket client = serverSocket.accept();
-                UUID id=  UUID.randomUUID();
-                ConnectionThread connection = new ConnectionThread(client,id);
-                Connections.getInstance().add(id, connection);
+                ConnectionThread connection = new ConnectionThread(client);
+                Connections.getInstance().add(connection);
                 connection.start();
             }
             /*Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");

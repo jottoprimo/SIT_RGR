@@ -29,7 +29,8 @@ public class LoginController {
             signin();
         });
         openButton.setOnAction(event -> {
-            manager.showMainView();
+
+            manager.showMainView(0);
         });
     }
 

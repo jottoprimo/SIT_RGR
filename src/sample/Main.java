@@ -18,15 +18,14 @@ public class Main extends Application {
     public void start(Stage primaryStage){
         Scene scene = new Scene(new StackPane());
         Model model = new Model();
-        SceneManager manager = new SceneManager(scene, model);
-        model.setManager(manager);
+        SceneManager manager = new SceneManager(scene);
         manager.showLoginScreen();
         //WebView web = (WebView)root.lookup("#PageView");
         //WebEngine engine = web.getEngine();
         //engine.loadContent("<h1>FUCK IT</h1>");
         primaryStage.setScene(scene);
         primaryStage.show();
-        model.connectToServer();
+        manager.connectToServer();
     }
 
 

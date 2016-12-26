@@ -1,9 +1,13 @@
 package sample.client;
 
+import javafx.util.Pair;
 import sample.Model;
+import sample.SceneManager;
 
 import java.io.*;
 import java.net.Socket;
+import java.util.HashMap;
+import java.util.TreeMap;
 
 /**
  * Created by Evgenij on 24.12.2016.
@@ -13,11 +17,11 @@ public class ClientThread extends Thread{
     ObjectInputStream inputStream;
     ObjectOutputStream outputStream;
     boolean interrupt;
-    Model model;
+    SceneManager manager;
 
-    public ClientThread (Model model) throws IOException {
+    public ClientThread (SceneManager manager) throws IOException {
         socket = new Socket("localhost", 8888);
-        this.model = model;
+        this.manager = manager;
     }
 
     @Override
@@ -31,16 +35,16 @@ public class ClientThread extends Thread{
                     AuthMessage auth = (AuthMessage) message;
                     switch (auth.getStatus()){
                         case SUCCESS:
-                            model.authenticated();
+                            manager.authenticated(auth.getRole());
                             break;
                         case WRONG_PASSW:
-                            model.authError("Неверный пароль");
+                            manager.authError("Неверный пароль");
                             break;
                         case LOGIN_REQUIRED:
-                            model.authError("Логин занят");
+                            manager.authError("Логин занят");
                             break;
                         case FAIL:
-                            model.authError("Неизвестная ошибка");
+                            manager.authError("Неизвестная ошибка");
                             break;
                     }
                     continue;
@@ -48,6 +52,27 @@ public class ClientThread extends Thread{
                 if (message instanceof AddNewsMessage){
                     AddNewsMessage news = (AddNewsMessage) message;
                     //TODO: Возможно уведомлялка о улачной загрузке
+                }
+                if (message instanceof TitlesMessage){
+                    TitlesMessage titlesMsg = (TitlesMessage) message;
+                    TreeMap<Integer, String> titles = titlesMsg.getTitles();
+                    manager.updateTitles(titles);
+                }
+                if (message instanceof NewsMessage){
+                    NewsMessage newsMessage = (NewsMessage)message;
+                    if (newsMessage.isDeleted()){
+                        manager.deleteMessagefromUI(newsMessage.getId());
+                    } else {
+                        manager.showNews(newsMessage.getText(), newsMessage.getId());
+                    }
+                }
+                if (message instanceof CommentMessage){
+                    CommentMessage commentMessage = (CommentMessage)message;
+                    if (!commentMessage.isDeleted()) {
+                        manager.addComment(commentMessage.getIdNews(), commentMessage.getId(), commentMessage.getText(), commentMessage.getFrom());
+                    } else {
+                        manager.deleteCommentFromUI(commentMessage.getId());
+                    }
                 }
             }
         } catch (IOException e) {
