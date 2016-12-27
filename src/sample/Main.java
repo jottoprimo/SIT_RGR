@@ -13,19 +13,22 @@ import java.io.IOException;
 import java.net.Socket;
 
 public class Main extends Application {
+    SceneManager manager;
 
     @Override
     public void start(Stage primaryStage){
         Scene scene = new Scene(new StackPane());
         Model model = new Model();
-        SceneManager manager = new SceneManager(scene);
+        manager = new SceneManager(scene, primaryStage);
         manager.showLoginScreen();
-        //WebView web = (WebView)root.lookup("#PageView");
-        //WebEngine engine = web.getEngine();
-        //engine.loadContent("<h1>FUCK IT</h1>");
         primaryStage.setScene(scene);
         primaryStage.show();
-        manager.connectToServer();
+    }
+
+    @Override
+    public void stop() throws Exception {
+        super.stop();
+        manager.stop();
     }
 
 

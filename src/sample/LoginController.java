@@ -8,7 +8,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 
-/** Controls the login screen */
+
 public class LoginController {
     @FXML private TextField user;
     @FXML private PasswordField password;
@@ -18,10 +18,14 @@ public class LoginController {
     @FXML private VBox container;
     private Label error;
     private SceneManager manager;
-    public void initialize() {}
+    public void initialize() {
+
+    }
 
     public void initManager(SceneManager manager) {
         this.manager = manager;
+
+        manager.connectToServer();
         loginButton.setOnAction(event-> {
                 authorize();
         });
@@ -38,12 +42,6 @@ public class LoginController {
         manager.signin(user.getText(), password.getText());
     }
 
-    /**
-     * Check authorization credentials.
-     *
-     * If accepted, return a sessionID for the authorized session
-     * otherwise, return null.
-     */
     private String authorize() {
         String userTxt = user.getText();
         String pswdTxt = password.getText();

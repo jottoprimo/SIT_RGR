@@ -8,20 +8,11 @@ public class AddNewsMessage implements Message {
     String title;
     String news;
     boolean success;
-    boolean isDeleted;
 
     public AddNewsMessage(String title, String news){
         this.title = title;
         this.news = news;
-        isDeleted = false;
         id = null;
-    }
-
-    public AddNewsMessage(int id, String title, String news, boolean isDeleted){
-        this.id = id;
-        this.title = title;
-        this.news = news;
-        this.isDeleted = isDeleted;
     }
 
     public String getTitle() {
@@ -56,13 +47,6 @@ public class AddNewsMessage implements Message {
         this.id = id;
     }
 
-    public boolean isDeleted() {
-        return isDeleted;
-    }
-
-    public void setDeleted(boolean deleted) {
-        isDeleted = deleted;
-    }
 
 
 }

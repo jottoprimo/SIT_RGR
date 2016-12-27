@@ -4,6 +4,7 @@ import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.stage.Stage;
 import javafx.util.Pair;
 import sample.client.*;
 import sun.rmi.runtime.Log;
@@ -19,9 +20,9 @@ public class SceneManager {
     private Scene scene;
     private LoginController loginController;
     private MainSceneController mainController;
-    private Object stage;
     ClientThread client;
     int idNews;
+    private Stage stage;
 
     public void connectToServer(){
         try {
@@ -54,8 +55,11 @@ public class SceneManager {
         showMainView(role);
     }
 
-    public void addNews(Pair<String, String> news) {
+    public void addNews(Pair<String, String> news, int id) {
         AddNewsMessage message = new AddNewsMessage(news.getKey(), news.getValue());
+        if (id!=-1){
+            message.setId(id);
+        }
         try {
             client.sendMessage(message);
         } catch (IOException e) {
@@ -63,16 +67,14 @@ public class SceneManager {
         }
     }
 
-    public SceneManager (Scene scene) {
+    public SceneManager (Scene scene, Stage stage) {
         this.client = null;
         this.scene = scene;
+        this.stage = stage;
     }
 
-    /**
-     * Callback method invoked to notify that a user has logged out of the main application.
-     * Will show the login application screen.
-     */
     public void logout() {
+        stop();
         showLoginScreen();
     }
 
@@ -83,6 +85,8 @@ public class SceneManager {
                         getClass().getResource("authScene.fxml")
                 );
                 scene.setRoot((Parent) loader.load());
+                stage.setHeight(200);
+                stage.setWidth(300);
                 loginController =
                         loader.<LoginController>getController();
                 loginController.initManager(this);
@@ -100,6 +104,8 @@ public class SceneManager {
                         getClass().getResource("mainScene.fxml")
                 );
                 scene.setRoot((Parent) loader.load());
+                stage.setHeight(600);
+                stage.setWidth(800);
                 mainController =
                         loader.<MainSceneController>getController();
                 mainController.initManager(this);
@@ -113,12 +119,7 @@ public class SceneManager {
     }
 
     public void authError(String message) {
-        //TODO: Вывопдить ошибку
         Platform.runLater(() -> loginController.authError(message));
-    }
-
-    public void test() {
-        mainController.test();
     }
 
     public void updateTitles(TreeMap<Integer, String> titles) {
@@ -134,9 +135,9 @@ public class SceneManager {
         }
     }
 
-    public void showNews(String text, int id) {
+    public void showNews(String title, String text, int id) {
         idNews = id;
-        Platform.runLater(() ->  mainController.showNews(text));
+        Platform.runLater(() ->  mainController.showNews(title, text));
     }
 
     public void sendComment(String text) {
@@ -177,7 +178,15 @@ public class SceneManager {
         }
     }
 
-    public void deleteMessagefromUI(int id) {
+    public void deleteNewsFromUI(int id) {
         Platform.runLater(() -> mainController.deleteNews(id));
+    }
+
+    public void stop() {
+        client.closeSocket();
+    }
+
+    public boolean connected() {
+        return client!=null && client.isInterrupted();
     }
 }

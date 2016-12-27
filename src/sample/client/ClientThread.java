@@ -1,12 +1,9 @@
 package sample.client;
 
-import javafx.util.Pair;
-import sample.Model;
 import sample.SceneManager;
 
 import java.io.*;
 import java.net.Socket;
-import java.util.HashMap;
 import java.util.TreeMap;
 
 /**
@@ -49,10 +46,6 @@ public class ClientThread extends Thread{
                     }
                     continue;
                 }
-                if (message instanceof AddNewsMessage){
-                    AddNewsMessage news = (AddNewsMessage) message;
-                    //TODO: Возможно уведомлялка о улачной загрузке
-                }
                 if (message instanceof TitlesMessage){
                     TitlesMessage titlesMsg = (TitlesMessage) message;
                     TreeMap<Integer, String> titles = titlesMsg.getTitles();
@@ -61,9 +54,9 @@ public class ClientThread extends Thread{
                 if (message instanceof NewsMessage){
                     NewsMessage newsMessage = (NewsMessage)message;
                     if (newsMessage.isDeleted()){
-                        manager.deleteMessagefromUI(newsMessage.getId());
+                        manager.deleteNewsFromUI(newsMessage.getId());
                     } else {
-                        manager.showNews(newsMessage.getText(), newsMessage.getId());
+                        manager.showNews(newsMessage.getTitle(), newsMessage.getText(), newsMessage.getId());
                     }
                 }
                 if (message instanceof CommentMessage){
@@ -73,6 +66,10 @@ public class ClientThread extends Thread{
                     } else {
                         manager.deleteCommentFromUI(commentMessage.getId());
                     }
+                }
+                if (message instanceof ExitMessage){
+                    socket.close();
+                    return;
                 }
             }
         } catch (IOException e) {
@@ -85,5 +82,21 @@ public class ClientThread extends Thread{
     public void sendMessage(Message message) throws IOException {
         outputStream.writeObject(message);
         outputStream.flush();
+    }
+
+    public void closeSocket() {
+        try {
+            if (socket.isClosed())return;
+            sendMessage(new ExitMessage());
+            sleep(1000);
+            if (!socket.isClosed()) {
+                socket.close();
+                interrupt = true;
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 }

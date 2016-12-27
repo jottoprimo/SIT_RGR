@@ -119,8 +119,29 @@ public class ConnectionThread extends Thread {
                         updateTitlesAll(news.getTitle(), id);
 
                         news.setSuccess(true);
+                    }
+                    else {
+                        if (news.getId()!=null){
+                            Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
+                            String connectionUrl = "jdbc:sqlserver://localhost;database=News_Service;integratedSecurity=true;";
+                            Connection con = DriverManager.getConnection(connectionUrl);
+                            Statement stmt = con.createStatement();
+                            int rs = stmt.executeUpdate(
+                                    "UPDATE [dbo].[News] SET\n" +
+                                            "[Title] = '"+news.getTitle()+"'\n" +
+                                            ",[Text] = '"+news.getNews()+"'\n" +
+                                            ",[Date] = GETDATE()\n" +
+                                            ",IsDeleted = 0 " +
+                                            "WHERE Id="+news.getId());
+                            if (rs==0){
+                                news.setSuccess(false);
+                                con.close();
+                                continue;
+                            }
+                            con.close();
+                            updateTitlesAll(news.getTitle(), news.getId());
 
-
+                        }
                     }
                     continue;
                 }
@@ -130,7 +151,7 @@ public class ConnectionThread extends Thread {
                     Connection con = DriverManager.getConnection(connectionUrl);
                     Statement stmt = con.createStatement();
                     ResultSet rs = stmt.executeQuery(
-                            "SELECT TOP(10) Id, Title FROM dbo.News"
+                            "SELECT TOP(10) Id, Title FROM dbo.News WHERE IsDeleted = 0"
                     );
                     TreeMap<Integer, String> result = new TreeMap<>();
                     while (rs.next()){
@@ -151,10 +172,11 @@ public class ConnectionThread extends Thread {
                     Statement stmt = con.createStatement();
                     if (!newsMessage.isDeleted()) {
                         ResultSet rs = stmt.executeQuery(
-                                "SELECT Text FROM dbo.News WHERE Id = " + newsMessage.getId()
+                                "SELECT Title, Text FROM dbo.News WHERE Id = " + newsMessage.getId()
                         );
                         if (rs.next()) {
                             newsMessage.setText(rs.getString("Text"));
+                            newsMessage.setTitle(rs.getString("Title").trim());
                             idNews = newsMessage.getId();
                         }
 
@@ -174,7 +196,7 @@ public class ConnectionThread extends Thread {
                                         ") B ON A.[User]=B.Id\n" +
                                         "WHERE\n" +
                                         "IsDeleted=0 AND \n" +
-                                        "NewsId=" + idNews + "\n" +
+                                        "NewsId=" + idNews + "\n " +
                                         "ORDER BY A.[Time] DESC"
                         );
                         while (rs.next()) {
@@ -230,6 +252,11 @@ public class ConnectionThread extends Thread {
                         );
                     }
                     updateCommentsAll(commentMessage);
+                }
+                if (message instanceof ExitMessage){
+                    sendMessage(message);
+                    socket.close();
+                    return;
                 }
             }
         } catch (IOException e) {

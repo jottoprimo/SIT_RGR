@@ -11,26 +11,23 @@ import javafx.stage.Stage;
  */
 public class AddNewsDialogController {
     @FXML
-    Button okButton;
-    @FXML
     HTMLEditor newsText;
     @FXML
     TextField title;
 
     public void initialize(){
-        okButton.setOnAction(event -> {
-            Stage stage = (Stage) okButton.getScene().getWindow();
-            // do what you have to do
-            stage.close();
-        });
     }
 
     public String getTitle(){
         return title.getText();
     }
+    public void setTitle(String titleTxt) { title.setText(titleTxt);}
 
     public String getNews(){
         return newsText.getHtmlText().replaceAll("contenteditable=\"true\"", "");
+    }
+    public void setNews(String news) {
+        newsText.setHtmlText(news);
     }
 
 }

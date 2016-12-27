@@ -1,5 +1,6 @@
 package sample;
 
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -35,57 +36,22 @@ public class MainSceneController {
     @FXML private TextField commentField;
     @FXML private VBox comments;
     @FXML private MenuItem addNewsBtn;
+    @FXML private MenuItem logoutBtn;
     @FXML private VBox titleBox;
     SceneManager manager;
     ContextMenu newsMenu;
     ContextMenu commentMenu;
     int role;
+    int getNewsTarget = 0;
+    AddNewsDialogController dialogController;
 
     public void initManager(SceneManager manager) {
         this.manager = manager;
         addNewsBtn.setOnAction(event ->{
-            Stage stage = new Stage();
-            Dialog dialog = new Dialog();
-            dialog.setTitle("Add news");
-
-            FXMLLoader loader = new FXMLLoader(
-                    getClass().getResource("addNewsDialog.fxml")
-            );
-            try {
-                dialog.getDialogPane().setContent(loader.load());
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            AddNewsDialogController controller = loader.getController();
-            dialog.getDialogPane().setPrefSize(700,300);
-            ButtonType buttonTypeClose = new ButtonType("Close", ButtonBar.ButtonData.CANCEL_CLOSE);
-            ButtonType buttonTypeOk = new ButtonType("Add", ButtonBar.ButtonData.OK_DONE);
-            dialog.getDialogPane().getButtonTypes().add(buttonTypeOk);
-            dialog.getDialogPane().getButtonTypes().add(buttonTypeClose);
-
-            dialog.setResultConverter(dialogButton -> {
-                if (dialogButton == buttonTypeOk) {
-                    return new Pair<>(controller.getTitle(), controller.getNews());
-                }
-                return null;
-            });
-
-            dialog.showAndWait();
-            Pair<String, String> result = (Pair<String, String>) dialog.getResult();
-            if (result==null) return;
-            manager.addNews(result);
-
-          /*
-            dialog.setR
-            VBox box = new VBox();
-            box.setAlignment(Pos.CENTER);
-            HBox buttons = new HBox();
-            buttons.setAlignment(Pos.CENTER);
-            buttons.getChildren().addAll(new Button("Ok"), new Button("Cancel"));
-            box.getChildren().addAll(new Label("Simple dialog"), new TextField(), buttons);
-            Scene scene = new Scene(box);
-            dialog.setScene(scene);
-            dialog.show();*/
+           openNewsDialog();
+        });
+        logoutBtn.setOnAction(event -> {
+            manager.logout();
         });
     }
 
@@ -93,10 +59,21 @@ public class MainSceneController {
         LinkedList<Button> showTitles = new LinkedList<>();
         for (Integer id:
              titles.keySet()) {
+            boolean fl = false;
+            for (Node title: titleBox.getChildren()){
+                if (title.getProperties().get("Id").equals(id)){
+                    ((Button) title).setText(titles.get(id));
+                    fl = true;
+                    break;
+                }
+            }
+            if (fl) continue;
             Button field = new Button(titles.get(id));
             field.setOnAction(event -> {
+                getNewsTarget = 0;
                 manager.getNews(id);
             });
+            field.getProperties().put("Id", id);
             field.setStyle("-fx-background-color: #ffffff;\n" +
                     "-fx-background-radius: 8,7,6;\n" +
                     "-fx-background-insets: 0,1,2;\n" +
@@ -110,7 +87,8 @@ public class MainSceneController {
                 ContextMenu contextMenu = new ContextMenu();
                 MenuItem update = new MenuItem("Update");
                 update.setOnAction(event -> {
-                    //TODO: Обвноление новости
+                    getNewsTarget = 1;
+                    openNewsDialog(id);
                 });
                 MenuItem delete = new MenuItem("Delete");
                 delete.setOnAction(event -> {
@@ -124,17 +102,24 @@ public class MainSceneController {
         titleBox.getChildren().addAll(0, showTitles);
     }
 
-    public void showNews(String text) {
-        WebEngine engine = pageView.getEngine();
-        engine.loadContent(text);
-        comments.getChildren().clear();
+    public void showNews(String title, String text) {
+        if (getNewsTarget == 0){
+            WebEngine engine = pageView.getEngine();
+            engine.loadContent("<h1>"+title+"</h1><p>"+text);
+            comments.getChildren().clear();
+        } else {
+            Platform.runLater(() -> {
+                dialogController.setTitle(title);
+                dialogController.setNews(text);}
+            );
+        }
+
     }
 
     public void initRole(int role) {
         this.role = role;
         if (role==0){
             commentField.setVisible(false);
-            commentField.setManaged(false);
         }
         if (role!=1){
             addNewsBtn.setVisible(false);
@@ -144,9 +129,11 @@ public class MainSceneController {
     @FXML
     public void onEnter(ActionEvent actionEvent) {
         manager.sendComment(commentField.getText());
+        commentField.setText("");
     }
 
     public void addComment(String text, String from, int id) {
+        if (getNewsTarget == 1) return;
         TextArea commText = new TextArea(from+"\n"+text);
         commText.getProperties().put("Id", id);
         commText.setEditable(false);
@@ -168,15 +155,6 @@ public class MainSceneController {
 
     public void initialize() {}
 
-    public void test(){
-        TextArea area = new TextArea("asdasda");
-        area.setMaxHeight(100);
-        area.setEditable(false);
-        comments.getChildren().add(area);
-        commentField.setVisible(false);
-        commentField.setManaged(false);
-    }
-
     public void deleteComment(int id) {
         Integer idInt = id;
         for (Node comment: comments.getChildren()){
@@ -190,11 +168,50 @@ public class MainSceneController {
     public void deleteNews(int id) {
         Integer idInt = id;
 
-        for (Node comment: titleBox.getChildren()){
-            if (comment.getProperties().get("Id").equals(idInt)){
-                comments.getChildren().remove(comment);
+        for (Node title: titleBox.getChildren()){
+            if (title.getProperties().get("Id").equals(idInt)){
+                titleBox.getChildren().remove(title);
                 return;
             }
         }
+    }
+
+    public void openNewsDialog(){
+        openNewsDialog(-1);
+    }
+
+    public void openNewsDialog(int id){
+        Dialog dialog = new Dialog();
+        dialog.setTitle("Add news");
+
+        FXMLLoader loader = new FXMLLoader(
+                getClass().getResource("addNewsDialog.fxml")
+        );
+        try {
+            dialog.getDialogPane().setContent(loader.load());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        dialogController = loader.getController();
+        dialog.getDialogPane().setPrefSize(700,300);
+        if (id!=-1){
+            manager.getNews(id);
+        }
+        ButtonType buttonTypeClose = new ButtonType("Close", ButtonBar.ButtonData.CANCEL_CLOSE);
+        ButtonType buttonTypeOk = new ButtonType("Add", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().add(buttonTypeOk);
+        dialog.getDialogPane().getButtonTypes().add(buttonTypeClose);
+
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == buttonTypeOk) {
+                return new Pair<>(dialogController.getTitle(), dialogController.getNews());
+            }
+            return null;
+        });
+
+        dialog.showAndWait();
+        Pair<String, String> result = (Pair<String, String>) dialog.getResult();
+        if (result==null) return;
+        manager.addNews(result, id);
     }
 }
